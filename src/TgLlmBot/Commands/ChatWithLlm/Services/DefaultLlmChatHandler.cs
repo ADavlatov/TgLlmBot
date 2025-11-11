@@ -16,6 +16,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using TgLlmBot.DataAccess.Models;
 using TgLlmBot.Services.DataAccess;
+using TgLlmBot.Services.Mcp.Tools;
 using TgLlmBot.Services.Telegram.Markdown;
 
 namespace TgLlmBot.Commands.ChatWithLlm.Services;
@@ -38,6 +39,7 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
     private readonly ITelegramMessageStorage _storage;
     private readonly ITelegramMarkdownConverter _telegramMarkdownConverter;
     private readonly TimeProvider _timeProvider;
+    private readonly IMcpToolsProvider _tools;
 
     public DefaultLlmChatHandler(
         DefaultLlmChatHandlerOptions options,
@@ -45,16 +47,18 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         TelegramBotClient bot,
         IChatClient chatClient,
         ITelegramMarkdownConverter telegramMarkdownConverter,
-        ILogger<DefaultLlmChatHandler> logger,
-        ITelegramMessageStorage storage)
+        ITelegramMessageStorage storage,
+        IMcpToolsProvider tools,
+        ILogger<DefaultLlmChatHandler> logger)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(bot);
         ArgumentNullException.ThrowIfNull(chatClient);
         ArgumentNullException.ThrowIfNull(telegramMarkdownConverter);
-        ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(tools);
+        ArgumentNullException.ThrowIfNull(logger);
         _options = options;
         _timeProvider = timeProvider;
         _bot = bot;
@@ -62,6 +66,7 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         _telegramMarkdownConverter = telegramMarkdownConverter;
         _logger = logger;
         _storage = storage;
+        _tools = tools;
     }
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
@@ -78,10 +83,11 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         }
 
         var context = BuildContext(command, contextMessages, image);
+        var tools = _tools.GetTools();
         var llmResponse = await _chatClient.GetResponseAsync(context, new()
         {
             ConversationId = Guid.NewGuid().ToString("N"),
-            ToolMode = ChatToolMode.None
+            Tools = [..tools]
         }, cancellationToken);
         // ReSharper disable once ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
         var llmResponseText = llmResponse.Text?.Trim();

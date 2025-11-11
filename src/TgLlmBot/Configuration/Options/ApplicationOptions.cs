@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using TgLlmBot.Configuration.Options.DataAccess;
 using TgLlmBot.Configuration.Options.Llm;
+using TgLlmBot.Configuration.Options.Mcp;
 using TgLlmBot.Configuration.Options.Telegram;
 
 namespace TgLlmBot.Configuration.Options;
@@ -17,4 +18,7 @@ public class ApplicationOptions
 
     [Required]
     public DataAccessOptions DataAccess { get; set; } = default!;
+
+    [Required]
+    public McpOptions Mcp { get; set; } = default!;
 }

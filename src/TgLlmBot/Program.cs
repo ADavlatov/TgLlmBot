@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using ModelContextProtocol.Client;
 using OpenAI;
 using OpenAI.Chat;
 using Telegram.Bot;
@@ -24,6 +25,9 @@ using TgLlmBot.DataAccess;
 using TgLlmBot.DataAccess.Design;
 using TgLlmBot.Extensions.Configuration;
 using TgLlmBot.Services.DataAccess;
+using TgLlmBot.Services.Mcp.Clients.Github;
+using TgLlmBot.Services.Mcp.Enums;
+using TgLlmBot.Services.Mcp.Tools;
 using TgLlmBot.Services.Telegram.CommandDispatcher;
 using TgLlmBot.Services.Telegram.Markdown;
 using TgLlmBot.Services.Telegram.RequestHandler;
@@ -43,9 +47,11 @@ public partial class Program
         {
             var selfInfo = new DefaultTelegramSelfInformation();
             var builder = CreateHostApplicationBuilder(args, selfInfo);
+
             using (var host = builder.Build())
             {
-                await ApplyMigrations(host);
+                await ApplyMigrationsAsync(host);
+                await InitializeMcpClientsAsync(host);
                 var hostLoggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
                 var logger = hostLoggerFactory.CreateLogger<Program>();
                 LogApplicationStarting(logger);
@@ -71,13 +77,27 @@ public partial class Program
 
     [SuppressMessage("ReSharper", "ConvertToUsingDeclaration")]
     [SuppressMessage("Style", "IDE0063:Use simple \'using\' statement")]
-    private static async Task ApplyMigrations(IHost host)
+    private static async Task ApplyMigrationsAsync(IHost host)
     {
         var scopeFactory = host.Services.GetRequiredService<IServiceScopeFactory>();
         await using (var asyncScope = scopeFactory.CreateAsyncScope())
         {
             var dbContext = asyncScope.ServiceProvider.GetRequiredService<BotDbContext>();
             await dbContext.Database.MigrateAsync(CancellationToken.None);
+        }
+    }
+
+    [SuppressMessage("ReSharper", "ConvertToUsingDeclaration")]
+    [SuppressMessage("Style", "IDE0063:Use simple \'using\' statement")]
+    private static async Task InitializeMcpClientsAsync(IHost host)
+    {
+        var scopeFactory = host.Services.GetRequiredService<IServiceScopeFactory>();
+        await using (var asyncScope = scopeFactory.CreateAsyncScope())
+        {
+            var toolsProvider = asyncScope.ServiceProvider.GetRequiredService<DefaultMcpToolsProvider>();
+            var github = asyncScope.ServiceProvider.GetRequiredKeyedService<McpClient>(McpClientName.Github);
+            var githubTools = await github.ListToolsAsync();
+            toolsProvider.AddTools(githubTools);
         }
     }
 
@@ -177,6 +197,21 @@ public partial class Program
                 });
         });
         builder.Services.AddSingleton<ITelegramMessageStorage, DefaultTelegramMessageStorage>();
+        // MCP
+        builder.Services.AddSingleton<DefaultMcpToolsProvider>();
+        builder.Services.AddSingleton<IMcpToolsProvider>(resolver => resolver.GetRequiredService<DefaultMcpToolsProvider>());
+        builder.Services.AddHttpClient(DefaultGithubMcpClientFactory.GithubHttpClientName);
+        builder.Services.AddSingleton(new DefaultGithubMcpClientFactoryOptions(
+            config.Mcp.Github.PersonalAccessToken,
+            config.Mcp.Github.WorkingDirectory,
+            config.Mcp.Github.Command));
+        builder.Services.AddSingleton<IGithubMcpClientFactory, DefaultGithubMcpClientFactory>();
+        builder.Services.AddKeyedSingleton<McpClient>(McpClientName.Github,
+            (resolver, _) =>
+            {
+                var githubFactory = resolver.GetRequiredService<IGithubMcpClientFactory>();
+                return githubFactory.CreateAsync(CancellationToken.None).GetAwaiter().GetResult();
+            });
         return builder;
     }
 
