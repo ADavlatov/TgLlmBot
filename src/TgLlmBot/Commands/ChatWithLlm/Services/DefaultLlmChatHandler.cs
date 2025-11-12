@@ -80,7 +80,8 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         ArgumentNullException.ThrowIfNull(command);
         Log.ProcessingLlmRequest(_logger, command.Message.From?.Username, command.Message.From?.Id);
 
-        using var _ = _typingStatusService.StartSendTypingStatusScope(command.Message.Chat.Id, command.Message.MessageThreadId);
+        _typingStatusService.SetTypingStatus(command.Message.Chat.Id, command.Message.MessageThreadId);
+
         var contextMessages = await _storage.SelectContextMessagesAsync(command.Message, cancellationToken);
 
         byte[]? image = null;
@@ -111,6 +112,8 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
                 markdownReplyText = $"{markdownReplyText[..4000]}\n(response cut)";
             }
 
+            _typingStatusService.RemoveTypingStatus(command.Message.Chat.Id, command.Message.MessageThreadId);
+
             var response = await _bot.SendMessage(
                 command.Message.Chat,
                 markdownReplyText,
@@ -124,6 +127,8 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         }
         catch (Exception ex)
         {
+            _typingStatusService.RemoveTypingStatus(command.Message.Chat.Id, command.Message.MessageThreadId);
+
             Log.MarkdownConversionOrSendFailed(_logger, ex);
             var response = await _bot.SendMessage(
                 command.Message.Chat,

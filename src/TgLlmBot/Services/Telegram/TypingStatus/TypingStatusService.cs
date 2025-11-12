@@ -12,17 +12,14 @@ public class TypingStatusService : ITypingStatusService
     }
 
     // ReSharper disable once PreferConcreteValueOverDefault
-    public void StartTyping(long chatId, int? threadId = default)
+    public void SetTypingStatus(long chatId, int? threadId = default)
     {
         _commandWriter.TryWrite(new StartTypingCommand(chatId, threadId));
     }
 
     // ReSharper disable once PreferConcreteValueOverDefault
-    public void StopTyping(long chatId, int? threadId = default)
+    public void RemoveTypingStatus(long chatId, int? threadId = default)
     {
         _commandWriter.TryWrite(new StopTypingCommand(chatId, threadId));
     }
-
-    // ReSharper disable once PreferConcreteValueOverDefault
-    public TypingStatusScope StartSendTypingStatusScope(long chatId, int? threadId = default) => new(this, chatId, threadId);
 }
