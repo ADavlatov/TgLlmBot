@@ -18,7 +18,6 @@ using TgLlmBot.DataAccess.Models;
 using TgLlmBot.Services.DataAccess;
 using TgLlmBot.Services.Mcp.Tools;
 using TgLlmBot.Services.Telegram.Markdown;
-using TgLlmBot.Services.Telegram.TypingStatus;
 
 namespace TgLlmBot.Commands.ChatWithLlm.Services;
 
@@ -41,7 +40,6 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
     private readonly ITelegramMarkdownConverter _telegramMarkdownConverter;
     private readonly TimeProvider _timeProvider;
     private readonly IMcpToolsProvider _tools;
-    private readonly ITypingStatusService _typingStatusService;
 
     public DefaultLlmChatHandler(
         DefaultLlmChatHandlerOptions options,
@@ -51,7 +49,6 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         ITelegramMarkdownConverter telegramMarkdownConverter,
         ITelegramMessageStorage storage,
         IMcpToolsProvider tools,
-        ITypingStatusService typingStatusService,
         ILogger<DefaultLlmChatHandler> logger)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -61,7 +58,6 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         ArgumentNullException.ThrowIfNull(telegramMarkdownConverter);
         ArgumentNullException.ThrowIfNull(storage);
         ArgumentNullException.ThrowIfNull(tools);
-        ArgumentNullException.ThrowIfNull(typingStatusService);
         ArgumentNullException.ThrowIfNull(logger);
         _options = options;
         _timeProvider = timeProvider;
@@ -71,7 +67,6 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         _logger = logger;
         _storage = storage;
         _tools = tools;
-        _typingStatusService = typingStatusService;
     }
 
     [SuppressMessage("Design", "CA1031:Do not catch general exception types")]
@@ -80,7 +75,7 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         ArgumentNullException.ThrowIfNull(command);
         Log.ProcessingLlmRequest(_logger, command.Message.From?.Username, command.Message.From?.Id);
 
-        _typingStatusService.SetTypingStatus(command.Message.Chat.Id, command.Message.MessageThreadId);
+        await _bot.SendChatAction(command.Message.Chat, ChatAction.Typing, cancellationToken: cancellationToken);
 
         var contextMessages = await _storage.SelectContextMessagesAsync(command.Message, cancellationToken);
 
@@ -112,8 +107,6 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
                 markdownReplyText = $"{markdownReplyText[..4000]}\n(response cut)";
             }
 
-            _typingStatusService.RemoveTypingStatus(command.Message.Chat.Id, command.Message.MessageThreadId);
-
             var response = await _bot.SendMessage(
                 command.Message.Chat,
                 markdownReplyText,
@@ -127,8 +120,6 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         }
         catch (Exception ex)
         {
-            _typingStatusService.RemoveTypingStatus(command.Message.Chat.Id, command.Message.MessageThreadId);
-
             Log.MarkdownConversionOrSendFailed(_logger, ex);
             var response = await _bot.SendMessage(
                 command.Message.Chat,
