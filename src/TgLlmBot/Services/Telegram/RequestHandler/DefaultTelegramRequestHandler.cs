@@ -4,12 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Telegram.Bot;
+
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using TgLlmBot.CommandDispatcher;
 using TgLlmBot.Services.DataAccess;
-using TgLlmBot.Services.Telegram.CommandDispatcher;
 
 namespace TgLlmBot.Services.Telegram.RequestHandler;
 
