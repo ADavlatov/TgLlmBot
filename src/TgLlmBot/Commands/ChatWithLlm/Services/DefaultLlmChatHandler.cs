@@ -84,6 +84,9 @@ public partial class DefaultLlmChatHandler : ILlmChatHandler
         {
             _costContextStorage.Initialize();
             Log.ProcessingLlmRequest(_logger, command.Message.From?.Username, command.Message.From?.Id);
+
+            await _bot.SendChatAction(command.Message.Chat, ChatAction.Typing, cancellationToken: cancellationToken);
+
             var contextMessages = await _storage.SelectContextMessagesAsync(command.Message, cancellationToken);
             byte[]? image = null;
             if (command.Message.Photo?.Length > 0)

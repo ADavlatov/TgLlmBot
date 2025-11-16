@@ -67,7 +67,6 @@ public sealed partial class DefaultTelegramRequestHandler : ITelegramRequestHand
 
         try
         {
-            cancellationToken.ThrowIfCancellationRequested();
             if (message.Date < _options.SkipMessagesOlderThan)
             {
                 return;
@@ -82,12 +81,7 @@ public sealed partial class DefaultTelegramRequestHandler : ITelegramRequestHand
         }
         catch (Exception ex)
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-
-            LogMessageHandlingExpection(_logger, ex);
+            LogMessageHandlingException(_logger, ex);
         }
     }
 
@@ -126,5 +120,5 @@ public sealed partial class DefaultTelegramRequestHandler : ITelegramRequestHand
     private static partial void LogErrorHandling(ILogger logger, HandleErrorSource errorSource, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Got exception during message handling")]
-    private static partial void LogMessageHandlingExpection(ILogger logger, Exception exception);
+    private static partial void LogMessageHandlingException(ILogger logger, Exception exception);
 }
