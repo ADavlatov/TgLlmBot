@@ -1,17 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
-using Telegram.Bot.Types;
 using TgLlmBot.DataAccess;
-using TgLlmBot.DataAccess.Models;
 
 namespace TgLlmBot.Services.DataAccess;
 
@@ -33,10 +27,10 @@ public class DefaultTelegramKickedUsersStorage : ITelegramKickedUsersStorage
         var dbContext = asyncScope.ServiceProvider.GetRequiredService<BotDbContext>();
 
         const string sql = """
-                INSERT INTO "KickedUsers" ("ChatId", "Id")
-                VALUES (@chatId, @userId)
-                ON CONFLICT ("ChatId", "Id") DO NOTHING;
-            """;
+                               INSERT INTO "KickedUsers" ("ChatId", "Id")
+                               VALUES (@chatId, @userId)
+                               ON CONFLICT ("ChatId", "Id") DO NOTHING;
+                           """;
 
         await dbContext.Database.ExecuteSqlRawAsync(
             sql,

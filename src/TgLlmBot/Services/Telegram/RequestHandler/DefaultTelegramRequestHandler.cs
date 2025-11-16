@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -17,8 +16,8 @@ public sealed partial class DefaultTelegramRequestHandler : ITelegramRequestHand
 {
     private readonly IHostApplicationLifetime _applicationLifetime;
     private readonly ITelegramCommandDispatcher _commandDispatcher;
-    private readonly ILogger<DefaultTelegramRequestHandler> _logger;
     private readonly ITelegramKickedUsersStorage _kickedUsersStorage;
+    private readonly ILogger<DefaultTelegramRequestHandler> _logger;
     private readonly DefaultTelegramRequestHandlerOptions _options;
 
     public DefaultTelegramRequestHandler(

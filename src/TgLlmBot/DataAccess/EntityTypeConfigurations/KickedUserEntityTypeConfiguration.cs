@@ -10,6 +10,10 @@ public class KickedUserEntityTypeConfiguration : IEntityTypeConfiguration<Kicked
     public void Configure(EntityTypeBuilder<KickedUser> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        builder.HasKey(x => new { x.ChatId, x.Id });
+        builder.HasKey(x => new
+        {
+            x.ChatId,
+            x.Id
+        });
     }
 }

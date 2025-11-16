@@ -32,8 +32,8 @@ public class DefaultTelegramCommandDispatcher : ITelegramCommandDispatcher
     private readonly DefaultTelegramCommandDispatcherOptions _options;
     private readonly PingCommandHandler _pingCommandHandler;
     private readonly RepoCommandHandler _repoCommandHandler;
-    private readonly ShitposterCommandHandler _shitposterCommandHandler;
     private readonly ITelegramSelfInformation _selfInformation;
+    private readonly ShitposterCommandHandler _shitposterCommandHandler;
     private readonly UsageCommandHandler _usageCommandHandler;
 
     public DefaultTelegramCommandDispatcher(
